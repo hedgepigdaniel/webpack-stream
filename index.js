@@ -26,22 +26,9 @@ var defaultStatsOptions = {
 module.exports = function (options, wp, done) {
   options = clone(options) || {};
   if (typeof done !== 'function') {
-    var callingDone = false;
     done = function (err, stats) {
-      if (err) {
-        // The err is here just to match the API but isnt used
+      if (options.quiet || !stats) {
         return;
-      }
-      stats = stats || {};
-      if (options.quiet || callingDone) {
-        return;
-      }
-      // Debounce output a little for when in watch mode
-      if (options.watch) {
-        callingDone = true;
-        setTimeout(function () {
-          callingDone = false;
-        }, 500);
       }
       if (options.verbose) {
         gutil.log(stats.toString({
@@ -104,6 +91,7 @@ module.exports = function (options, wp, done) {
     }
 
     var compiler = webpack(options, function (err, stats) {
+      done(err, stats);
       if (err) {
         self.emit('error', new gutil.PluginError('webpack-stream', err));
       }
@@ -119,7 +107,6 @@ module.exports = function (options, wp, done) {
       if (!options.watch) {
         self.queue(null);
       }
-      done(err, stats);
       if (options.watch && !options.quiet) {
         gutil.log('webpack is watching for changes');
       }
